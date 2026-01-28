@@ -1,0 +1,82 @@
+spring:
+  profiles:
+    active: ${springProfile}
+
+server:
+  port: 8080
+
+jwt.secret: test
+
+springdoc:
+  swagger-ui:
+    enabled: ${enableSwagger}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    platform: postgres
+    url: ${postgresUrl}
+    username: ${postgresUsername}
+    password: ${postgresPassword}
+    driver-class-name: org.postgresql.Driver
+    initialization-mode: never
+    continue-on-error: true
+  jpa:
+    database: POSTGRESQL
+    hibernate:
+      ddl-auto: none
+    generate-ddl: false
+    show-sql: true
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 60
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+management:
+  datadog:
+    metrics:
+      export:
+        api-key: ${DD_API_KEY}
+        uri: https://api.us5.datadoghq.com
+        step: 10s
+logging:
+  config: classpath:log4j2-prod.yml
+
+
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    platform: postgres
+    url: jdbc:postgresql://${urlPostgresLocal}
+    username: ${usernamePostgresLocal}
+    password: ${passwordPostgresLocal}
+    initialization-mode: never
+    continue-on-error: true
+  jpa:
+    database: POSTGRESQL
+    hibernate.ddl-auto: none
+    generate-ddl: false
+    show-sql: true
+management:
+  datadog:
+    metrics:
+      export:
+        enabled: false
+logging:
+  config: classpath:log4j2-dev.yml

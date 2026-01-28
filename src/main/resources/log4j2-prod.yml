@@ -1,0 +1,31 @@
+Configuration:
+  status: INFO
+
+  Appenders:
+    Console:
+      name: CONSOLE
+      PatternLayout:
+        pattern: "%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
+
+    Http:
+      name: HTTP
+      url: "https://http-intake.logs.us5.datadoghq.com/api/v2/logs"
+      Property:
+        - name: "DD-API-KEY"
+          value: "${env:DD_API_KEY}"
+        - name: "Content-Type"
+          value: "application/json"
+      JsonTemplateLayout:
+        eventTemplateUri: classpath:MyCustomEcsLayout.json
+
+  Loggers:
+    Root:
+      Property:
+        - name: "service"
+          value: "${env:datadogServiceName}"
+        - name: "host"
+          value: "${env:datadogHostName}"
+      level: info
+      AppenderRef:
+        - ref: CONSOLE
+        - ref: HTTP

@@ -1,0 +1,48 @@
+{
+  "instant": {
+    "$resolver": "timestamp",
+    "pattern": {
+      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+      "timeZone": "America/Sao_Paulo"
+    }
+  },
+  "severity": {
+    "$resolver": "level",
+    "field": "name"
+  },
+  "message": {
+    "$resolver": "message",
+    "stringified": true
+  },
+  "labels": {
+    "$resolver": "mdc",
+    "flatten": true,
+    "stringified": true
+  },
+  "tags": {
+    "$resolver": "ndc"
+  },
+  "error-type": {
+    "$resolver": "exception",
+    "field": "className"
+  },
+  "error-message": {
+    "$resolver": "exception",
+    "field": "message"
+  },
+  "error-stack_trace": {
+    "$resolver": "exception",
+    "field": "stackTrace",
+    "stackTrace": {
+      "stringified": true
+    }
+  },
+  "logger": {
+    "$resolver": "logger",
+    "field": "name"
+  },
+  "thread-name": {
+    "$resolver": "thread",
+    "field": "name"
+  }
+}
