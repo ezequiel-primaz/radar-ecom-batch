@@ -27,7 +27,7 @@ public class ApiExceptionHandler {
         return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler({NotFoundException.class, MLItemNotFound.class, MlItemFromCatalogNotFound.class})
+    @ExceptionHandler({NotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundException(Exception e){
         log.error(e.getMessage());

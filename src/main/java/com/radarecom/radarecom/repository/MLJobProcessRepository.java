@@ -1,6 +1,6 @@
 package com.radarecom.radarecom.repository;
 
-import com.radarecom.radarecom.entity.JobProcess;
+import com.radarecom.radarecom.entity.MLJobProcess;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,17 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 @Repository
-public interface JobProcessRepository extends JpaRepository<JobProcess, Integer> {
+public interface MLJobProcessRepository extends JpaRepository<MLJobProcess, Integer> {
 
     @Modifying
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Query(value = """
-            UPDATE JOB_PROCESS JP
+            UPDATE ML_JOB_PROCESS JP
             SET LAST_UPDATE = :lastUpdate
-            FROM JOBS J
-            WHERE JP.ID = J.CURRENT_JOB_PROCESS_ID
-            AND J.ID = :jobId
+            FROM ML_JOBS J
+            WHERE JP.ID = J.CURRENT_ML_JOB_PROCESS_ID
+            AND J.ID = :MLJobId
             """, nativeQuery = true)
-    void updateJobProcessByJobId(@Param("jobId") String jobId, @Param("lastUpdate") LocalDateTime lastUpdate);
+    void updateJobProcessByJobId(@Param("MLJobId") String MLJobId, @Param("lastUpdate") LocalDateTime lastUpdate);
 
 }

@@ -129,31 +129,6 @@ public class MercadoLivreIntegration {
     }
 
     @Retryable(backoff = @Backoff(delay = 1, multiplier = 2))
-    public ResponseEntity<BodyItemML> getItemById(String itemId) {
-        var url = URL + "items";
-
-        UriComponents builder = UriComponentsBuilder.fromHttpUrl(url)
-                .queryParam("ids",itemId)
-                .queryParam("include_attributes","all").build();
-
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, buildHeaders(), String.class);
-
-            ItemML[] itemML = objectMapper.readValue(response.getBody(), ItemML[].class);
-
-            if ( itemML[0].getCode() != 200 ) throw new MLItemNotFound();
-
-            return new ResponseEntity<>(itemML[0].getBody(), response.getStatusCode());
-        }catch (MLItemNotFound e){
-            refreshToken();
-            throw new MLItemNotFound();
-        } catch (Exception e){
-            refreshToken();
-            throw new UnexpectedErrorException(e.getMessage());
-        }
-    }
-
-    @Retryable(backoff = @Backoff(delay = 1, multiplier = 2))
     public ResponseEntity<Long> getItemVisitCountById(String itemId) {
         var url = URL + "visits/items";
 

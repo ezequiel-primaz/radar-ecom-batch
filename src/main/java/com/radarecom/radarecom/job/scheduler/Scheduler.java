@@ -1,27 +1,22 @@
 package com.radarecom.radarecom.job.scheduler;
 
-import com.radarecom.radarecom.entity.Job;
-import com.radarecom.radarecom.entity.JobProcess;
-import com.radarecom.radarecom.enums.JobId;
+import com.radarecom.radarecom.entity.MLJob;
+import com.radarecom.radarecom.entity.MLJobProcess;
+import com.radarecom.radarecom.enums.MLJobId;
 import com.radarecom.radarecom.exception.NotFoundException;
-import com.radarecom.radarecom.job.JobProcessor;
-import com.radarecom.radarecom.job.service.JobService;
+import com.radarecom.radarecom.job.Job;
+import com.radarecom.radarecom.job.service.MLJobService;
 import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.ThreadContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-import static com.radarecom.radarecom.constants.Constants.TRANSID;
-import static com.radarecom.radarecom.enums.JobStatus.COMPLETED;
-import static com.radarecom.radarecom.enums.JobStatus.ERROR;
-import static java.util.Objects.isNull;
+import static com.radarecom.radarecom.enums.JobStatus.*;
 
 @Component
 @AllArgsConstructor
@@ -29,95 +24,86 @@ public class Scheduler {
 
     private static final Logger log = LogManager.getLogger();
 
-    private final List<JobProcessor> processors;
+    private final List<Job> processors;
 
-    private final JobService jobService;
+    private final MLJobService mlJobService;
 
     @Async
     @Scheduled(cron = "0 10 0 * * *", zone = "America/Sao_Paulo") // roda 1 vez as 00:10
     //@Scheduled(fixedRate = 600000000) || ao executar a app.
-    public void jobsStart() {
-        log.info("Starting Jobs!");
-        var jobs = jobService.getAllActiveJobs();
+    public void startJobs() {
+        log.info("Starting MLJobs");
 
-        var jobsProcess = new ArrayList<JobProcess>();
+        var mlJobs = mlJobService.getAllActiveJobs();
 
-        jobs.forEach(job -> {
+        mlJobs.forEach(mlJob -> {
 
-            if (!jobService.canStartJob(job)) {
-                log.error("Cant start Job ID = [{}] | Status = [{}]", job.getId(), job.getStatus());
-                return;
+            if (!mlJob.getStatus().equals(NOT_STARTED)) {
+                log.error("MLJob [{}] cannot be started. Current STATUS = [{}]", mlJob.getId(), mlJob.getStatus());
+            }else {
+                String transId = UUID.randomUUID().toString();
+                var mlJobProcess = mlJobService.createJobProcess(mlJob.getId(), transId);
+                mlJobService.startMlJob(mlJob, mlJobProcess.getId());
+                getJobProcessor(mlJob.getId()).start(mlJobProcess);
+
+                log.info("MLJob [{}] Started. MLJobProcess = [{}]", mlJob.getId(), mlJobProcess.getId());
             }
-
-            var jobProcess = jobService.createJobProcess(job.getId(), ThreadContext.get(TRANSID));
-            jobsProcess.add(jobProcess);
-            jobService.startJob(job, jobProcess.getId());
-
-            log.info("Job Started! Job ID = [{}] | JobProcess = [{}]", job.getId(), jobProcess.getId());
         });
 
-        jobsExecute();
+        handleJobs();
     }
 
     @Async
-    @Scheduled(fixedRate = 30 * 60 * 1000, initialDelay = 30 * 60 * 1000) // roda a cada 30 min || espera 30 min pra comecar ao startar
+    @Scheduled(fixedRate = 15 * 60 * 1000, initialDelay = 15 * 60 * 1000) // roda a cada 15 min || espera 15 min pra comecar ao startar
     //@Scheduled(initialDelay = 120000, fixedRate = 120000) || roda de 2 em 2 min
-    public void jobsExecute() {
+    public void handleJobs() {
 
-        var jobProcesses = getJobProcesses();
+        var mlJobProcesses = getJobProcesses();
 
-        jobProcesses.forEach(jobProcess -> {
-            try {
-                if(shouldExecuteJobProcess(jobProcess)){
+        mlJobProcesses.forEach(mlJobProcess -> {
+            getJobProcessor(mlJobProcess.getMLJobId()).execute(mlJobProcess);
+        });
+    }
 
-                    log.info("Executing JobProcess! JobId = [{}] | JobProcessId = [{}]", jobProcess.getJobId(), jobProcess.getId());
+    @Async
+    @Scheduled(fixedRate = 15 * 60 * 1000, initialDelay = 30 * 60 * 1000) // roda a cada 15 min || espera 30 min pra comecar ao startar
+    //@Scheduled(initialDelay = 600000) || espera 10 min pra rodar ao startar
+    public void closeJobs() {
 
-                    var jobProcessor = getJobProcessor(jobProcess.getJobId());
+        var mlJobProcesses = getJobProcesses();
 
-                    jobProcessor.execute(jobProcess.getTransId());
-                }
-            }catch (Exception e){
-                log.error("Error executing JobProcess! JobId = [{}] | JobProcessId = [{}] | message = [{}]", jobProcess.getJobId(), jobProcess.getId(), e.getMessage());
-            }
-
+        mlJobProcesses.forEach(mlJobProcess -> {
+            getJobProcessor(mlJobProcess.getMLJobId()).close(mlJobProcess);
         });
     }
 
     @Async
     @Scheduled(cron = "0 0 23 * * *", zone = "America/Sao_Paulo") // roda 1 vez as 23:00
     //@Scheduled(initialDelay = 600000) || espera 10 min pra rodar ao startar
-    public void jobsEnd() {
+    public void forceCloseJobs() {
 
-        var jobProcesses = getJobProcesses();
+        log.info("Force Close remaining MLJobs.");
 
-        jobProcesses.forEach(jobProcess -> {
-            try {
-                log.info("Closing JobProcess! JobId = [{}] | JobProcessId = [{}]", jobProcess.getJobId(), jobProcess.getId());
+        var mlJobProcesses = getJobProcesses();
 
-                getJobProcessor(jobProcess.getJobId()).close(jobProcess.getTransId());
-            }catch (Exception e){
-                log.error("Error closing JobProcess! JobId = [{}] | JobProcessId = [{}]", jobProcess.getJobId(), jobProcess.getId());
-            }
+        mlJobProcesses.forEach(mlJobProcess -> {
+            getJobProcessor(mlJobProcess.getMLJobId()).forceClose(mlJobProcess);
         });
     }
 
-    private boolean shouldExecuteJobProcess(JobProcess jobProcess){
-        if (jobProcess.getStatus().equals(COMPLETED) || jobProcess.getStatus().equals(ERROR)) return false;
-        return isNull(jobProcess.getLastUpdate()) || jobProcess.getLastUpdate().plusMinutes(5).isBefore(LocalDateTime.now());
+    private List<MLJobProcess> getJobProcesses(){
+        var jobs = mlJobService.getAllActiveJobs();
+
+        return mlJobService.getCurrentMLJobProcesses(jobs.stream().map(MLJob::getCurrentMLJobProcessId).toList());
     }
 
-    private JobProcessor getJobProcessor(JobId jobId){
+
+    private Job getJobProcessor(MLJobId MLJobId){
         return processors
                 .stream()
-                .filter(jobProcessor -> jobProcessor.getJobId().equals(jobId))
+                .filter(job -> job.getJobId().equals(MLJobId))
                 .findFirst()
-                .orElseThrow(() -> new NotFoundException(String.format("JobProcessor not found to JobId = [%s]", jobId)));
-    }
-
-    private List<JobProcess> getJobProcesses(){
-        var jobs = jobService.getAllActiveJobs();
-
-        return jobService.getCurrentJobProcesses(jobs.stream().map(Job::getCurrentJobProcessId).toList());
+                .orElseThrow(() -> new NotFoundException(String.format("JobProcessor not found to JobId = [%s]", MLJobId)));
     }
 
 }

@@ -1,6 +1,6 @@
 package com.radarecom.radarecom.entity;
 
-import com.radarecom.radarecom.enums.JobId;
+import com.radarecom.radarecom.enums.MLJobId;
 import com.radarecom.radarecom.enums.JobStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -8,24 +8,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-@Entity(name = "JOBS")
+@Entity(name = "ML_JOBS")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Job {
+public class MLJob {
 
     @Id
     @Enumerated(value = EnumType.STRING)
-    private JobId id;
+    private MLJobId id;
 
-    @Column(name = "LAST_UPDATE")
-    private LocalDateTime lastUpdate;
-
-    @Column(name = "CURRENT_JOB_PROCESS_ID")
-    private Integer currentJobProcessId;
+    @Column(name = "CURRENT_ML_JOB_PROCESS_ID")
+    private Integer currentMLJobProcessId;
 
     @Column(name = "STATUS")
     @Enumerated(value = EnumType.STRING)
