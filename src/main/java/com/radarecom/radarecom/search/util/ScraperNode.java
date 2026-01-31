@@ -7,7 +7,7 @@ import java.util.concurrent.Semaphore;
 public class ScraperNode {
 
     private final RadarEcomScraperRestTemplate client;
-    private final Semaphore semaphore = new Semaphore(30);
+    private final Semaphore semaphore = new Semaphore(15);
 
     public ScraperNode(RadarEcomScraperRestTemplate client) {
         this.client = client;

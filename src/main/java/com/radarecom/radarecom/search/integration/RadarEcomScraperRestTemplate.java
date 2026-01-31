@@ -3,6 +3,8 @@ package com.radarecom.radarecom.search.integration;
 import com.radarecom.radarecom.exception.RadaEcomScraperException;
 import com.radarecom.radarecom.search.dto.SearchItem;
 import com.radarecom.radarecom.search.dto.melidata.MelidataResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.*;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -15,6 +17,8 @@ import java.util.List;
 import static java.util.Objects.nonNull;
 
 public class RadarEcomScraperRestTemplate {
+
+    private static final Logger log = LogManager.getLogger();
 
     private String SCRAPER_API_URL;
     private final RestTemplate restTemplate;
@@ -32,8 +36,14 @@ public class RadarEcomScraperRestTemplate {
     @Retryable(backoff = @Backoff(delay = 1), maxAttempts = 2)
     public List<SearchItem> fetchSearchPage(String targetUrl) {
         String url = SCRAPER_API_URL + "search-page" + "?url=" + targetUrl;
-        SearchItem[] array = execute(url, HttpMethod.GET, null, SearchItem[].class);
-        return Arrays.asList(array);
+        try{
+            SearchItem[] array = execute(url, HttpMethod.GET, null, SearchItem[].class);
+            log.info("Scrapper | SearchPage | 200");
+            return Arrays.asList(array);
+        }catch (Exception e){
+            log.info("Scrapper | SearchPage | 500");
+            throw new RuntimeException();
+        }
     }
 
     private <T> T execute(String url, HttpMethod method, Object body, Class<T> responseType) {

@@ -54,12 +54,12 @@ public class ScanMLCategoriesJob implements Job {
     public void execute(MLJobProcess mlJobProcess) {
         ThreadContext.put(TRANSID, mlJobProcess.getTransId());
 
-        if (mlJobProcess.getStatus().equals(IN_PROGRESS) && (isNull(mlJobProcess.getLastUpdate()) || mlJobProcess.getLastUpdate().isBefore(LocalDateTime.now().minusMinutes(EXECUTE_REFRESH_MINUTES)))){
+        if (shouldExecute(mlJobProcess)){
 
             log.info("MLJob [{}] | MLJobProcess [{}] | Starting workers.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
 
             for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-                categoryProcessor.startWorker(mlJobProcess.getTransId());
+                categoryProcessor.startWorker(mlJobProcess);
             }
 
             log.info("MLJob [{}] | MLJobProcess [{}] | Workers started.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
@@ -75,7 +75,7 @@ public class ScanMLCategoriesJob implements Job {
         // fazer summary
         ThreadContext.put(TRANSID, mlJobProcess.getTransId());
 
-        if (!mlJobProcess.getStatus().equals(COMPLETED) && scanMLCategoriesJobService.shouldClose()){
+        if (shouldClose(mlJobProcess)){
             log.info("MLJob [{}] | MLJobProcess [{}] | Closing.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
 
             mlJobService.closeJob(mlJobProcess.getMLJobId(), COMPLETED);
@@ -107,6 +107,14 @@ public class ScanMLCategoriesJob implements Job {
         //mover categorias para not_started
 
         ThreadContext.clearAll();
+    }
+
+    private boolean shouldExecute(MLJobProcess mlJobProcess){
+        return mlJobProcess.getStatus().equals(IN_PROGRESS) && (isNull(mlJobProcess.getLastUpdate()) || mlJobProcess.getLastUpdate().isBefore(LocalDateTime.now().minusMinutes(EXECUTE_REFRESH_MINUTES)));
+    }
+
+    private boolean shouldClose(MLJobProcess mlJobProcess){
+        return !mlJobProcess.getStatus().equals(COMPLETED) && scanMLCategoriesJobService.shouldClose();
     }
 
 }

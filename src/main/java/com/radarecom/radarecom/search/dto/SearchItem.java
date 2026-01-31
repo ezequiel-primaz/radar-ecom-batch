@@ -17,6 +17,11 @@ public class SearchItem {
 
     private String id;
     private String url;
+    private String name;
+    private String imageUrl;
+    private Double price;
+    private Integer sales;
+    private Integer totalResults;
 
     public String getId(){
         if (id.startsWith("MLB-")){

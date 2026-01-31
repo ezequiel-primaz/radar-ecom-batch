@@ -1,5 +1,7 @@
 package com.radarecom.radarecom.search.entity;
 
+import com.radarecom.radarecom.enums.ProductMLStatus;
+import com.radarecom.radarecom.enums.ProductRadarStatus;
 import com.radarecom.radarecom.enums.ProductType;
 import com.radarecom.radarecom.search.enums.Provider;
 import jakarta.persistence.*;
@@ -99,6 +101,9 @@ public class Product {
     @Column(name = "CREATED_AT")
     private LocalDate createdAt;
 
+    @Column(name = "RADAR_CREATED_AT")
+    private LocalDate radarCreatedAt; //TODO
+
     @Column(name = "RADAR_LAST_UPDATE")
     private LocalDate radarLastUpdate;
 
@@ -108,6 +113,14 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(name = "PROVIDER")
     private Provider provider;
+
+    @Column(name = "RADAR_STATUS")
+    @Enumerated(EnumType.STRING)
+    private ProductRadarStatus radarStatus; //TODO
+
+    @Column(name = "ML_STATUS")
+    @Enumerated(EnumType.STRING)
+    private ProductMLStatus mlStatus; //TODO
 
     @Transient
     public Double getTotalRevenue() {
