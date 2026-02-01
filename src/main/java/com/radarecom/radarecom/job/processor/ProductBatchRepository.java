@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -63,19 +64,19 @@ public class ProductBatchRepository {
                 }
         );
 
-
         jdbcTemplate.batchUpdate(
                 """
-                INSERT INTO product_history (product_id, price, sales, ts)
-                VALUES (?, ?, ?, now())
+                INSERT INTO product_history (product_id, price, sales, day)
+                VALUES (?, ?, ?, ?)
                 ON CONFLICT (product_id, day) DO NOTHING
                 """,
                 items,
-                60, // batch size
+                60,
                 (ps, item) -> {
                     ps.setString(1, item.getId());
                     ps.setDouble(2, item.getPrice());
                     ps.setInt(3, item.getSales());
+                    ps.setObject(4, LocalDate.now());
                 }
         );
     }
