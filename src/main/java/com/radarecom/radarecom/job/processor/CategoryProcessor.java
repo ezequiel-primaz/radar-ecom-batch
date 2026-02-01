@@ -6,7 +6,6 @@ import com.radarecom.radarecom.job.service.MLJobService;
 import com.radarecom.radarecom.repository.MLCategoryBatchRepository;
 import com.radarecom.radarecom.search.util.ScraperUtil;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -96,8 +95,9 @@ public class CategoryProcessor {
                 category.setCurrentProcessRetries(retries);
                 mlCategoryBatchRepository.save(category);
                 processCategory(category);
+            }else {
+                throw new RuntimeException();
             }
-            throw new RuntimeException();
         }
 
         log.info("Category [{}] | [{}] | Processed", category.getId(), category.getName());

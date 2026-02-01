@@ -51,7 +51,7 @@ public class ProductBatchRepository {
         jdbcTemplate.batchUpdate(
                 sql,
                 items,
-                50,
+                60,
                 (ps, item) -> {
                     ps.setString(1, item.getId());
                     ps.setString(2, item.getUrl());
@@ -60,6 +60,22 @@ public class ProductBatchRepository {
                     ps.setString(5, item.getImageUrl());
                     ps.setDouble(6, item.getPrice());
                     ps.setInt(7, item.getSales());
+                }
+        );
+
+
+        jdbcTemplate.batchUpdate(
+                """
+                INSERT INTO product_history (product_id, price, sales, ts)
+                VALUES (?, ?, ?, now())
+                ON CONFLICT (product_id, day) DO NOTHING
+                """,
+                items,
+                60, // batch size
+                (ps, item) -> {
+                    ps.setString(1, item.getId());
+                    ps.setDouble(2, item.getPrice());
+                    ps.setInt(3, item.getSales());
                 }
         );
     }
