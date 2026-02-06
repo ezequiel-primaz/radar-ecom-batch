@@ -1,7 +1,6 @@
 package com.radarecom.radarecom.entity;
 
 import com.radarecom.radarecom.enums.MlCategoryBatchStatus;
-import com.radarecom.radarecom.enums.MlCategoryStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

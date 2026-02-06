@@ -1,6 +1,7 @@
 package com.radarecom.radarecom.repository;
 
 import com.radarecom.radarecom.entity.MLCategoryBatch;
+import com.radarecom.radarecom.projection.MLCategoriesBatchSummaryProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -117,5 +118,33 @@ public interface MLCategoryBatchRepository extends JpaRepository<MLCategoryBatch
             nativeQuery = true
     )
     Long getCountByStatusNotStartedOrInProgress();
+
+    @Query(
+            value = """
+                    SELECT
+                    	SUM(CASE WHEN status = 'NOT_STARTED' THEN 1 ELSE 0 END) AS notStarted,
+                    	SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS inProgress,
+                        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed,
+                        SUM(CASE WHEN status = 'ERROR'   THEN 1 ELSE 0 END) AS error
+                    FROM ML_CATEGORIES_BATCH;
+                    """,
+            nativeQuery = true
+    )
+    MLCategoriesBatchSummaryProjection findSummaryProjection();
+
+    @Modifying
+    @Transactional
+    @Query(
+            value = """
+        UPDATE ML_CATEGORIES_BATCH
+        SET
+            STATUS = 'NOT_STARTED',
+            STARTED_AT = null,
+            ENDED_AT = null,
+            LAST_UPDATE = null
+        """,
+            nativeQuery = true
+    )
+    void closeAllMLCategoriesBatch();
 
 }

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.radarecom.radarecom.enums.JobStatus.*;
-import static com.radarecom.radarecom.enums.MLBatchSchedulerIdAction.FORCE_CLOSE;
 import static com.radarecom.radarecom.enums.MLBatchSchedulerIdAction.START;
 
 @Component
@@ -88,18 +87,11 @@ public class Scheduler {
     @Async
     @Scheduled(cron = "0 0-50/10 23 * * *", zone = "America/Sao_Paulo") // comeca rodar as 23:00 e dps de 10 em 10 ate 23:50.
     public void forceCloseJobs() {
-        if (shouldExecuteSchedulerAction(FORCE_CLOSE)){
-            log.info("Force Close remaining MLJobs.");
+        var mlJobProcesses = getJobProcesses();
 
-            var mlJobProcesses = getJobProcesses();
-
-            mlJobProcesses.forEach(mlJobProcess -> {
-                getJobProcessor(mlJobProcess.getMLJobId()).forceClose(mlJobProcess);
-            });
-
-            updateSchedulerAction(FORCE_CLOSE);
-        }
-
+        mlJobProcesses.forEach(mlJobProcess -> {
+            getJobProcessor(mlJobProcess.getMLJobId()).forceClose(mlJobProcess);
+        });
     }
 
     private List<MLJobProcess> getJobProcesses(){

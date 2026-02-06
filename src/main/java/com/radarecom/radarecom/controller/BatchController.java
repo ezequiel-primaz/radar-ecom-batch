@@ -1,12 +1,13 @@
 package com.radarecom.radarecom.controller;
 
 import com.radarecom.radarecom.entity.MLJob;
-import com.radarecom.radarecom.job.ScanMLCategoriesJob;
+import com.radarecom.radarecom.entity.MLJobProcess;
 import com.radarecom.radarecom.job.scheduler.Scheduler;
 import com.radarecom.radarecom.job.service.MLJobService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,10 +32,10 @@ public class BatchController {
         return ResponseEntity.ok(jobs);
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> test(){
-        //test.execute("abc");
-        return ResponseEntity.ok("Alive");
+    @GetMapping("/job-process/{id}")
+    public ResponseEntity<MLJobProcess> getJobProcess(@PathVariable Integer id){
+        var jobs = mlJobService.getMLJobProcessById(id);
+        return ResponseEntity.ok(jobs);
     }
 
     @GetMapping("/start-jobs")
@@ -47,6 +48,18 @@ public class BatchController {
     public ResponseEntity<String> executeJobs(){
         scheduler.handleJobs();
         return ResponseEntity.ok("Executed");
+    }
+
+    @GetMapping("/close-jobs")
+    public ResponseEntity<String> closeJobs(){
+        scheduler.closeJobs();
+        return ResponseEntity.ok("Closed");
+    }
+
+    @GetMapping("/force-close-jobs")
+    public ResponseEntity<String> forceCloseJobs(){
+        scheduler.forceCloseJobs();
+        return ResponseEntity.ok("Force Closed");
     }
 
 }

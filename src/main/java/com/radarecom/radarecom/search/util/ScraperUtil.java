@@ -19,9 +19,6 @@ public class ScraperUtil {
     private final List<ScraperNode> nodes;
     private final AtomicInteger roundRobin = new AtomicInteger(0);
 
-    //TODO Urgente:
-    //TODO Temos q implementar um semaphoro ou algo do tipo aqui, pois quem esta controlando a concorrencia eh a chamada no SearchService...
-    //TODO a classe ScraperUtil tem q saber o limite de chamada q ela pode receber simultanemanete... para entao dividir entre os containers de scrapping
     public ScraperUtil(
             @Qualifier("scraperExecutor") Executor scraperExecutor,
             List<RadarEcomScraperRestTemplate> scraperClients // várias instâncias

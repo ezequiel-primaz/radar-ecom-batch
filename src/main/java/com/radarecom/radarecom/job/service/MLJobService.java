@@ -2,6 +2,7 @@ package com.radarecom.radarecom.job.service;
 
 import com.radarecom.radarecom.entity.MLJobProcess;
 import com.radarecom.radarecom.entity.MLJob;
+import com.radarecom.radarecom.entity.jsonb.MLJobProcessSummary;
 import com.radarecom.radarecom.enums.MLJobId;
 import com.radarecom.radarecom.enums.JobStatus;
 import com.radarecom.radarecom.exception.NotFoundException;
@@ -86,7 +87,7 @@ public class MLJobService {
     }
 
     @Transactional
-    public void closeJob(MLJobId MLJobId, JobStatus status){
+    public void closeJob(MLJobId MLJobId, JobStatus status, MLJobProcessSummary summary){
         try {
             var job = getMLJobById(MLJobId);
             var jobProcess = getMLJobProcessById(job.getCurrentMLJobProcessId());
@@ -95,6 +96,7 @@ public class MLJobService {
 
             jobProcess.setStatus(status);
             jobProcess.setEndAt(LocalDateTime.now());
+            jobProcess.setSummary(summary);
 
             mlJobProcessRepository.save(jobProcess);
             mlJobRepository.save(job);

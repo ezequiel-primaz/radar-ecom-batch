@@ -1,7 +1,6 @@
 package com.radarecom.radarecom.job;
 
 import com.radarecom.radarecom.entity.MLJobProcess;
-import com.radarecom.radarecom.enums.JobStatus;
 import com.radarecom.radarecom.enums.MLJobId;
 
 public interface Job {

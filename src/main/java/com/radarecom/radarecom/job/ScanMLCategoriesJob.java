@@ -1,6 +1,8 @@
 package com.radarecom.radarecom.job;
 
 import com.radarecom.radarecom.entity.MLJobProcess;
+import com.radarecom.radarecom.entity.jsonb.MLJobProcessSummary;
+import com.radarecom.radarecom.entity.jsonb.ScanMLCategoriesSummary;
 import com.radarecom.radarecom.enums.MLJobId;
 import com.radarecom.radarecom.job.processor.CategoryProcessor;
 import com.radarecom.radarecom.job.service.MLJobService;
@@ -11,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -70,6 +73,7 @@ public class ScanMLCategoriesJob implements Job {
 
     @Async
     @Override
+    @Transactional
     public void close(MLJobProcess mlJobProcess) {
         // responsavel por checkar se as condicoes para o fechamento do job estao concluidas e fechar o mesmo
         // fazer summary
@@ -78,7 +82,11 @@ public class ScanMLCategoriesJob implements Job {
         if (shouldClose(mlJobProcess)){
             log.info("MLJob [{}] | MLJobProcess [{}] | Closing.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
 
-            mlJobService.closeJob(mlJobProcess.getMLJobId(), COMPLETED);
+            var summary = getSummary();
+
+            scanMLCategoriesJobService.closeAllMLCategoriesBatch();
+
+            mlJobService.closeJob(mlJobProcess.getMLJobId(), COMPLETED, summary);
 
             log.info("MLJob [{}] | MLJobProcess [{}] | Closed.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
         }
@@ -89,6 +97,7 @@ public class ScanMLCategoriesJob implements Job {
     }
 
     @Override
+    @Transactional
     public void forceClose(MLJobProcess mlJobProcess) {
         // caso o job nao esta fechado, fechar a forca
         // fazer summary
@@ -99,7 +108,11 @@ public class ScanMLCategoriesJob implements Job {
         if (!mlJobProcess.getStatus().equals(COMPLETED)){
             log.info("MLJob [{}] | MLJobProcess [{}] | Force Closing.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
 
-            mlJobService.closeJob(mlJobProcess.getMLJobId(), COMPLETED);
+            var summary = getSummary();
+
+            scanMLCategoriesJobService.closeAllMLCategoriesBatch();
+
+            mlJobService.closeJob(mlJobProcess.getMLJobId(), COMPLETED, summary);
 
             log.info("MLJob [{}] | MLJobProcess [{}] | Forced Closed.", mlJobProcess.getMLJobId(), mlJobProcess.getId());
         }
@@ -115,6 +128,20 @@ public class ScanMLCategoriesJob implements Job {
 
     private boolean shouldClose(MLJobProcess mlJobProcess){
         return !mlJobProcess.getStatus().equals(COMPLETED) && scanMLCategoriesJobService.shouldClose();
+    }
+
+    //TODO talvez tornar esse metodo parte do contrato de Job
+    private MLJobProcessSummary getSummary(){
+        var summaryProjection = scanMLCategoriesJobService.getSummaryProjection();
+
+        var summary = ScanMLCategoriesSummary.builder()
+                .notStarted(summaryProjection.getNotStarted())
+                .inProgress(summaryProjection.getInProgress())
+                .completed(summaryProjection.getCompleted())
+                .error(summaryProjection.getError())
+                .build();
+
+        return summary;
     }
 
 }
